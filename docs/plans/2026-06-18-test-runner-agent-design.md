@@ -11,7 +11,7 @@ report a structured pass/fail result. The root narrates it back as prose.
 ## Decisions
 
 - **Trigger:** chat — "run the tests for `<url>`" (+ optional instruction).
-- **Input:** a repo URL *or* a PR URL, with an optional branch/tag/commit ref.
+- **Input:** a repo URL _or_ a PR URL, with an optional branch/tag/commit ref.
 - **Engine:** **fully agent-driven** — the `clone_repo` tool only checks the code out;
   the sub-agent uses `bash` to detect the stack, install deps, and run the tests,
   guided by the user's instruction. No built-in per-ecosystem logic.
@@ -44,9 +44,13 @@ declared sub-agent with its own isolated sandbox.
 
 `agent/lib/github.ts` (moved up from `review/`, imported by both sub-agents):
 
-- `parseGitHubTarget(url, refOverride?)` → `{ kind: "pr"|"repo", owner, repo, number?, ref? }`
-- `parsePrUrl`, `parseNumstat` (review), `assertSafeRef` (validates a ref before it is
-  interpolated into a shell command — rejects metacharacters and a leading `-`).
+- `parseGitHubTarget(url, refOverride?)` → `{ kind: "pr"|"repo", owner, repo, number?, ref? }`,
+  and `parsePrTarget(url)` for the review tool (PR-only, throws otherwise).
+- `assertSafeRef` validates a ref before it is interpolated into a shell command
+  (rejects metacharacters and a leading `-`). `parseNumstat` parses `git diff --numstat`.
+- `brokerGitHubAuth(sandbox, token)` and `resolveCloneUrl(sandbox, owner, repo)` —
+  the single home for the token-brokering / `.github-brokered` marker / token-in-URL
+  fallback logic, shared by both sub-agents' `sandbox.ts` and clone tools.
 
 owner/repo are charset-constrained by the URL regexes, the PR number is digits-only, and
 the ref is validated — so nothing user-supplied can inject shell syntax in `clone_repo`.
@@ -70,8 +74,8 @@ agent/
 
 `{ url, ref? }`. Parses the target; clones blobless into `/workspace/repo`; for a PR
 fetches `pull/<n>/head` and checks it out; for a repo checks out `ref` when given.
-Token handled exactly like `review` (brokering marker → plain URL, else token-in-URL).
-Returns `{ kind, owner, repo, number?, ref?, repoDir, head, headSubject }`.
+Token handled via the shared `resolveCloneUrl` (brokering marker → plain URL, else
+token-in-URL). Returns `{ ...target, repoDir, head, headSubject }`.
 
 ## `outputSchema`
 

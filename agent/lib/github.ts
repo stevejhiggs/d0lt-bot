@@ -1,30 +1,11 @@
+import type { SandboxSession } from "eve/sandbox";
+
 // Restrict owner/repo to GitHub's allowed characters so the values are always
 // safe to interpolate into a shell command (no shell metacharacters possible).
 const PR_URL =
   /^https?:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?\/pull\/(\d+)(?:[/?#].*)?$/;
 const REPO_URL =
   /^https?:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?(?:\/tree\/([^/?#]+))?\/?(?:[?#].*)?$/;
-
-export type PrRef = {
-  owner: string;
-  repo: string;
-  number: number;
-};
-
-/**
- * Parse a GitHub pull-request URL into its owner / repo / number parts.
- * Throws on anything that is not a github.com PR URL.
- */
-export function parsePrUrl(url: string): PrRef {
-  const match = PR_URL.exec(url.trim());
-  if (!match) {
-    throw new Error(
-      `Not a GitHub pull-request URL: ${url}. Expected https://github.com/<owner>/<repo>/pull/<number>.`,
-    );
-  }
-  const [, owner, repo, number] = match;
-  return { owner, repo, number: Number(number) };
-}
 
 export type GitHubTarget =
   | { kind: "pr"; owner: string; repo: string; number: number }
@@ -53,6 +34,15 @@ export function parseGitHubTarget(url: string, refOverride?: string): GitHubTarg
   return ref ? { kind: "repo", owner, repo, ref } : { kind: "repo", owner, repo };
 }
 
+/** Parse a PR URL specifically, rejecting non-PR GitHub URLs. */
+export function parsePrTarget(url: string): Extract<GitHubTarget, { kind: "pr" }> {
+  const target = parseGitHubTarget(url);
+  if (target.kind !== "pr") {
+    throw new Error(`Expected a GitHub pull-request URL, got: ${url}`);
+  }
+  return target;
+}
+
 /** Git refs we are willing to interpolate into a shell command. */
 const SAFE_REF = /^[A-Za-z0-9._/-]+$/;
 
@@ -65,6 +55,62 @@ export function assertSafeRef(ref: string): string {
     throw new Error(`Unsafe git ref: ${ref}`);
   }
   return ref;
+}
+
+// Marker file a brokering session drops so clone tools know they can clone the
+// plain URL (the firewall injects the Authorization header) instead of falling
+// back to a token-in-URL clone.
+const BROKER_MARKER = ".github-brokered";
+
+/**
+ * Set up authenticated git access to github.com for a fresh sandbox session.
+ * Prefers credential brokering: inject an `Authorization` header at the firewall
+ * so the token never enters the sandbox, and drop a marker file. The `"*"`
+ * catch-all keeps general egress open (e.g. for package installs). Backends that
+ * can't broker domain-level credentials (Docker/just-bash) throw — then the marker
+ * stays absent and {@link resolveCloneUrl} falls back to a token-in-URL clone.
+ * A no-op when no token is configured (public repos clone anonymously).
+ */
+export async function brokerGitHubAuth(
+  sandbox: SandboxSession,
+  token: string | undefined,
+): Promise<void> {
+  if (!token) return;
+  const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
+  try {
+    await sandbox.setNetworkPolicy({
+      allow: {
+        "github.com": [{ transform: [{ headers: { authorization: `Basic ${basic}` } }] }],
+        "*": [],
+      },
+    });
+    await sandbox.writeTextFile({ path: BROKER_MARKER, content: "1" });
+  } catch {
+    // Backend can't broker; resolveCloneUrl will embed the token in the URL.
+  }
+}
+
+/**
+ * Resolve the clone URL for a github.com repo. If brokering ran this session
+ * (marker present), clone the plain URL and let the injected header authenticate;
+ * otherwise embed the `GITHUB_TOKEN` in the URL when one is available.
+ */
+export async function resolveCloneUrl(
+  sandbox: SandboxSession,
+  owner: string,
+  repo: string,
+): Promise<string> {
+  let brokered = false;
+  try {
+    await sandbox.readTextFile({ path: BROKER_MARKER });
+    brokered = true;
+  } catch {
+    // marker absent → not brokered
+  }
+  const token = process.env.GITHUB_TOKEN;
+  return !brokered && token
+    ? `https://x-access-token:${token}@github.com/${owner}/${repo}.git`
+    : `https://github.com/${owner}/${repo}.git`;
 }
 
 export type DiffStats = {

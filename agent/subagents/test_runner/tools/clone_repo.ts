@@ -1,6 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { assertSafeRef, parseGitHubTarget } from "../../../lib/github.ts";
+import { assertSafeRef, parseGitHubTarget, resolveCloneUrl } from "../../../lib/github.ts";
 
 export default defineTool({
   description:
@@ -19,22 +19,7 @@ export default defineTool({
   async execute({ url, ref }, ctx) {
     const target = parseGitHubTarget(url, ref);
     const sandbox = await ctx.getSandbox();
-
-    // Did onSession broker the GitHub token at the firewall this session? If so,
-    // clone the plain URL; otherwise fall back to an authenticated clone URL.
-    let brokered = false;
-    try {
-      await sandbox.readTextFile({ path: ".github-brokered" });
-      brokered = true;
-    } catch {
-      // marker absent → not brokered
-    }
-
-    const token = process.env.GITHUB_TOKEN;
-    const cloneUrl =
-      !brokered && token
-        ? `https://x-access-token:${token}@github.com/${target.owner}/${target.repo}.git`
-        : `https://github.com/${target.owner}/${target.repo}.git`;
+    const cloneUrl = await resolveCloneUrl(sandbox, target.owner, target.repo);
 
     // owner/repo are charset-constrained by parseGitHubTarget; the ref is validated
     // below; the PR number is digits-only — so nothing here can inject shell syntax.
@@ -58,11 +43,7 @@ export default defineTool({
     const [head = "", subject = ""] = result.stdout.trim().split("\n");
 
     return {
-      kind: target.kind,
-      owner: target.owner,
-      repo: target.repo,
-      number: target.kind === "pr" ? target.number : undefined,
-      ref: target.kind === "repo" ? (target.ref ?? null) : undefined,
+      ...target,
       repoDir: "/workspace/repo",
       head: head.trim(),
       headSubject: subject.trim(),
