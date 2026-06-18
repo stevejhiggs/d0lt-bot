@@ -1,6 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { runReadOnlySql } from "../lib/sample-db.js";
+import { runReadOnlySql } from "../lib/sample-db.ts";
 
 export default defineTool({
   description:
