@@ -5,10 +5,14 @@ Date: 2026-06-18
 ## Goal
 
 Make d0lt-bot able to review a nominated GitHub PR. The user messages the bot a
-PR URL; the bot clones the repo into a sandbox, computes the PR diff, and runs a
-review over it. The "review" is a deterministic placeholder for now (count of the
-letter "E", plus diff stats) but the pipeline is built so a real reviewer can drop
-in later without restructuring.
+PR URL; the bot clones the repo into a sandbox, reads the PR diff in context, and
+produces a real code review — a summary, severity-tagged findings, and an overall
+recommendation (approve / comment / request changes).
+
+> History: an earlier iteration used a deterministic "count the letter E" placeholder
+> to prove the fetch→review→report pipeline. Once that pipeline was verified working,
+> the review step was replaced with an actual LLM code review. The pipeline is
+> unchanged.
 
 ## Decisions
 
@@ -88,32 +92,42 @@ Leaves both `/workspace/repo` (tree) and `/workspace/pr.diff` (diff) in the sand
   by Docker/just-bash, so the call is wrapped in try/catch; on failure the marker is
   absent and the tool falls back to the token-in-URL clone.
 
-## Placeholder review & output
+## Review & output
 
-After fetch, the sub-agent runs deterministic stats via `bash` (exact, not LLM
-guessing):
-
-```bash
-grep -oi e /workspace/pr.diff | wc -l   # case-insensitive letter-E count
-```
+After fetch, the sub-agent reads `/workspace/pr.diff` and opens the affected files
+under `/workspace/repo` to review changes in context (callers, types, related code).
+It reviews for correctness bugs, security, error handling/edge cases, API/contract
+changes, and maintainability — judged against the repo's own conventions, favouring a
+few important findings over many nitpicks, and returns no findings when the change is
+clean.
 
 Sub-agent returns task-mode structured output:
 
 ```ts
 outputSchema: {
   pr:      { owner, repo, number, url },
-  stats:   { filesChanged, additions, deletions, letterECount },
-  summary: string
+  stats:   { filesChanged, additions, deletions },
+  summary: string,                       // overall assessment
+  findings: Array<{
+    severity: "critical" | "major" | "minor" | "info",
+    file: string, line?: number,
+    description: string, suggestion?: string,
+  }>,
+  recommendation: "approve" | "comment" | "request_changes",
 }
 ```
 
-Root narrates it back: "PR #123: 4 files, +212/-37, contains 1,084 E's."
+The root narrates this back: leads with the recommendation + summary, then the
+findings ordered by severity (file/line, problem, suggested fix), plus the diff size.
 
-## Real-review seam
+## Notes on eve task-mode `outputSchema`
 
-Later, the sub-agent swaps the `grep` placeholder for real review logic (read
-`/workspace/repo` + `/workspace/pr.diff`, reason, add review tools/skills). The
-pipeline — delegate → clone → diff → review → structured result — is unchanged.
+Verified against the running agent: a declared sub-agent runs in **task mode** and its
+`outputSchema` is a *soft* contract — eve passes the model's JSON through as the
+`result.completed` structured result without hard-validating it against the schema, so
+prompt wording matters (loose wording makes the model drift to other field names). The
+structured object is an internal hand-off to the parent; it is **not** shown in chat.
+The user-facing output is always the **root's prose narration** of that object.
 
 ## Testing
 

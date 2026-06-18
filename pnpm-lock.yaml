@@ -13,13 +13,13 @@ importers:
         version: 3.0.85(zod@4.4.3)
       '@vercel/connect':
         specifier: 0.2.5
-        version: 0.2.5(ai@7.0.0-beta.178(zod@4.4.3))(eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3)))
+        version: 0.2.5(ai@7.0.0-beta.178(zod@4.4.3))(eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3))(microsandbox@0.5.7))
       ai:
         specifier: 7.0.0-beta.178
         version: 7.0.0-beta.178(zod@4.4.3)
       eve:
         specifier: ^0.11.5
-        version: 0.11.5(ai@7.0.0-beta.178(zod@4.4.3))
+        version: 0.11.5(ai@7.0.0-beta.178(zod@4.4.3))(microsandbox@0.5.7)
       sql.js:
         specifier: ^1.14.1
         version: 1.14.1
@@ -36,6 +36,9 @@ importers:
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260618.1
         version: 7.0.0-dev.20260618.1
+      microsandbox:
+        specifier: ^0.5.7
+        version: 0.5.7
       oxfmt:
         specifier: ^0.55.0
         version: 0.55.0
@@ -473,6 +476,26 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
+  '@superradcompany/microsandbox-darwin-arm64@0.5.7':
+    resolution: {integrity: sha512-/ZnoBI0l9mYvPrwS8xPQ5L+c5B6U+aescZsiGXbjIvW9m/2rvMvi+tvl/Rj/pISHME8r2/2AQTqiFk4wvVxbcQ==}
+    engines: {node: '>= 22'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.7':
+    resolution: {integrity: sha512-OHn6eZ1eTdZxmz3cfgpQFo3wpGq1WkbyqnB5P+VQYRknl+HyBJTsGb22ayqiSpIrN07QGOGoHcOA2+43etk5fw==}
+    engines: {node: '>= 22'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@superradcompany/microsandbox-linux-x64-gnu@0.5.7':
+    resolution: {integrity: sha512-YBh0uaVG62aUHOSeKptpEQO+R2l/OZcWzE8DoCqMvyXQ9thKva9DUxP7QD439zHlteReh2Suku6DW9SRBeyqhw==}
+    engines: {node: '>= 22'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
 
@@ -724,6 +747,11 @@ packages:
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
+
+  microsandbox@0.5.7:
+    resolution: {integrity: sha512-6M/J2HsBtQeKQN2zyglwozC/nFD5bQPsF9fuk5dJvBqE6z5oxmqR5TOWoLVq2d3f2iS88TioxwDH7+Sa/MVTCQ==}
+    engines: {node: '>= 22'}
+    hasBin: true
 
   mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
@@ -1206,6 +1234,15 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
+  '@superradcompany/microsandbox-darwin-arm64@0.5.7':
+    optional: true
+
+  '@superradcompany/microsandbox-linux-arm64-gnu@0.5.7':
+    optional: true
+
+  '@superradcompany/microsandbox-linux-x64-gnu@0.5.7':
+    optional: true
+
   '@tybys/wasm-util@0.10.2':
     dependencies:
       tslib: 2.8.1
@@ -1262,12 +1299,12 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@0.2.5(ai@7.0.0-beta.178(zod@4.4.3))(eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3)))':
+  '@vercel/connect@0.2.5(ai@7.0.0-beta.178(zod@4.4.3))(eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3))(microsandbox@0.5.7))':
     dependencies:
       '@vercel/oidc': 3.6.1
     optionalDependencies:
       ai: 7.0.0-beta.178(zod@4.4.3)
-      eve: 0.11.5(ai@7.0.0-beta.178(zod@4.4.3))
+      eve: 0.11.5(ai@7.0.0-beta.178(zod@4.4.3))(microsandbox@0.5.7)
 
   '@vercel/oidc@3.2.0': {}
 
@@ -1307,10 +1344,12 @@ snapshots:
       httpxy: 0.5.3
       srvx: 0.11.16
 
-  eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3)):
+  eve@0.11.5(ai@7.0.0-beta.178(zod@4.4.3))(microsandbox@0.5.7):
     dependencies:
       ai: 7.0.0-beta.178(zod@4.4.3)
       nitro: 3.0.260610-beta
+    optionalDependencies:
+      microsandbox: 0.5.7
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -1390,6 +1429,12 @@ snapshots:
   json-schema@0.4.0: {}
 
   merge-stream@2.0.0: {}
+
+  microsandbox@0.5.7:
+    optionalDependencies:
+      '@superradcompany/microsandbox-darwin-arm64': 0.5.7
+      '@superradcompany/microsandbox-linux-arm64-gnu': 0.5.7
+      '@superradcompany/microsandbox-linux-x64-gnu': 0.5.7
 
   mimic-fn@2.1.0: {}
 

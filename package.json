@@ -28,6 +28,7 @@
     "@types/node": "24.x",
     "@types/sql.js": "^1.4.11",
     "@typescript/native-preview": "7.0.0-dev.20260618.1",
+    "microsandbox": "^0.5.7",
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",
     "oxlint-tsgolint": "^0.23.0"
