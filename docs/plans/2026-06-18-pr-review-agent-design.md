@@ -13,7 +13,7 @@ in later without restructuring.
 ## Decisions
 
 - **Trigger:** chat message containing a PR URL (on-demand, interactive). No webhook.
-- **Repo access:** public *and* private — uses `GITHUB_TOKEN` from the app runtime.
+- **Repo access:** public _and_ private — uses `GITHUB_TOKEN` from the app runtime.
 - **Review engine:** a dedicated declared sub-agent (`review`) fetches and reviews.
 - **Token handling:** credential brokering when the backend supports it
   (`vercel()` / `microsandbox()`), falling back to an authenticated clone URL on
@@ -39,7 +39,7 @@ You ──chat: "review https://github.com/owner/repo/pull/123"──▶  root a
 ```
 
 **Why the fetch lives in the sub-agent, not the root:** eve isolates each declared
-sub-agent's sandbox (it does *not* share the parent's). Cloning in the root sandbox
+sub-agent's sandbox (it does _not_ share the parent's). Cloning in the root sandbox
 would be invisible to the reviewer, so clone + diff + review all happen inside the
 sub-agent. That also keeps the full working tree available to a real reviewer later.
 
@@ -53,9 +53,9 @@ agent/
 └── subagents/review/
     ├── agent.ts                   # defineAgent({ description, model })
     ├── instructions.md            # how to fetch + review + report
-    ├── lib/github.ts              # parse PR URL, shared helpers
+    ├── lib/github.ts              # parse PR URL, parse numstat
     ├── tools/fetch_pull_request.ts# clone + diff into the sub-agent sandbox
-    └── sandbox/sandbox.ts         # own sandbox; ensure git; broker GitHub token
+    └── sandbox.ts                 # own sandbox; broker GitHub token
 
 # removed:
 #   agent/tools/run_sql.ts
@@ -67,24 +67,26 @@ agent/
 Runs in the app runtime, drives the sub-agent's sandbox via `ctx.getSandbox()`:
 
 1. Parse `owner / repo / number` from the URL in JS. Reject non-github.com PR URLs.
-2. Build the clone URL. If a token is present and brokering is *not* active, embed
+2. Build the clone URL. If a token is present and brokering is _not_ active, embed
    `https://x-access-token:TOKEN@github.com/...`; otherwise clone the plain URL and
    rely on the brokered `Authorization` header.
-3. `git clone --depth 50 <url> repo`
+3. `git clone --filter=blob:none <url> repo` (blobless partial clone: full commit
+   graph so merge-base works, but fast — no blobs until needed)
 4. `cd repo && git fetch origin pull/<n>/head:pr`
-5. `git diff origin/HEAD...pr > /workspace/pr.diff`
-6. Return `{ repoDir, diffPath, filesChanged, additions, deletions }` (parsed from
-   `git diff --numstat`).
+5. `BASE=$(git merge-base origin/HEAD pr)` then `git diff "$BASE" pr > /workspace/pr.diff`
+6. Return `{ owner, repo, number, repoDir, diffPath, filesChanged, additions, deletions }`
+   (line totals parsed from `git diff --numstat`).
 
 Leaves both `/workspace/repo` (tree) and `/workspace/pr.diff` (diff) in the sandbox.
 
-## Sandbox & auth (`subagents/review/sandbox/sandbox.ts`)
+## Sandbox & auth (`subagents/review/sandbox.ts`)
 
-- Ensure `git` is available (base image `ghcr.io/vercel/eve:latest` ships it).
-- `onSession`: if the backend supports domain-level network policy, broker
-  `GITHUB_TOKEN` as an `Authorization` header for `github.com`, keeping the secret
-  out of the sandbox. Otherwise leave egress open and let the tool fall back to the
-  token-in-URL clone.
+- `git` comes from the base image `ghcr.io/vercel/eve:latest`.
+- `onSession`: if `GITHUB_TOKEN` is set, try `sandbox.setNetworkPolicy(...)` to broker
+  it as an `Authorization` header for `github.com`, keeping the secret out of the
+  sandbox, and drop a `.github-brokered` marker file. Domain-level policy is rejected
+  by Docker/just-bash, so the call is wrapped in try/catch; on failure the marker is
+  absent and the tool falls back to the token-in-URL clone.
 
 ## Placeholder review & output
 
