@@ -1,6 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { parseNumstat, parsePrUrl } from "../lib/github.ts";
+import { parseNumstat, parsePrUrl } from "../../../lib/github.ts";
 
 export default defineTool({
   description:

@@ -123,7 +123,7 @@ findings ordered by severity (file/line, problem, suggested fix), plus the diff 
 ## Notes on eve task-mode `outputSchema`
 
 Verified against the running agent: a declared sub-agent runs in **task mode** and its
-`outputSchema` is a *soft* contract — eve passes the model's JSON through as the
+`outputSchema` is a _soft_ contract — eve passes the model's JSON through as the
 `result.completed` structured result without hard-validating it against the schema, so
 prompt wording matters (loose wording makes the model drift to other field names). The
 structured object is an internal hand-off to the parent; it is **not** shown in chat.
