@@ -68,6 +68,11 @@ agent/
 
 ## `fetch_pull_request` tool
 
+> Superseded: this tool was later generalized and shared with `test_runner` as
+> `fetch_repo` (definition in `agent/lib/tools/fetch-repo.ts`, re-exported into each
+> sub-agent's `tools/`). Behaviour for a PR URL is unchanged — see the test-runner
+> design doc for the shared shape. The original description follows.
+
 Runs in the app runtime, drives the sub-agent's sandbox via `ctx.getSandbox()`:
 
 1. Parse `owner / repo / number` from the URL in JS. Reject non-github.com PR URLs.

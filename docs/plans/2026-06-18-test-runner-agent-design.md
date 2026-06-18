@@ -70,12 +70,18 @@ agent/
         └── sandbox.ts               # own sandbox; broker GITHUB_TOKEN
 ```
 
-## `clone_repo` tool
+## `fetch_repo` tool (shared with `review`)
+
+Both sub-agents use the **same** fetch tool. eve does not let declared sub-agents share
+a tool slot, so the definition lives once in `agent/lib/tools/fetch-repo.ts` and each
+sub-agent's `tools/fetch_repo.ts` is a one-line `export { default } from …` re-export.
 
 `{ url, ref? }`. Parses the target; clones blobless into `/workspace/repo`; for a PR
-fetches `pull/<n>/head` and checks it out; for a repo checks out `ref` when given.
-Token handled via the shared `resolveCloneUrl` (brokering marker → plain URL, else
-token-in-URL). Returns `{ ...target, repoDir, head, headSubject }`.
+fetches `pull/<n>/head`, checks it out, and writes the diff to `/workspace/pr.diff`
+(stats returned); for a repo checks out `ref` when given. Token handled via the shared
+`resolveCloneUrl`. Returns `{ ...target, repoDir, head, diffPath?, filesChanged?,
+additions?, deletions? }` — the test runner uses the working tree and ignores the diff
+fields; the review agent consumes them.
 
 ## `outputSchema`
 

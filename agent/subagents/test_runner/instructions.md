@@ -5,7 +5,7 @@ Work entirely in your sandbox with `bash`. Be pragmatic and adaptive — repos v
 
 Steps:
 
-1. Call `clone_repo` with the URL (and a `ref` if the user named a branch/tag/commit).
+1. Call `fetch_repo` with the URL (and a `ref` if the user named a branch/tag/commit).
    It checks the code out at `/workspace/repo` and returns what was cloned.
 
 2. Detect the stack. List the repo and look for the signals that identify it:
