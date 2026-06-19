@@ -10,6 +10,8 @@ an isolated sandbox:
 - **Run a repository's tests** — clones the code, detects the stack, installs
   dependencies, runs the tests, and reports a pass/fail result with the relevant output.
 
+Currently actually running in github is not enabled, eve supports this and others easily but it was not implemented for this poc.
+
 ## How it works
 
 A root agent routes each request to one of two specialist sub-agents, each with its own
