@@ -2,6 +2,7 @@
   "name": "my-agent",
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.8.0",
   "imports": {
     "#*": "./agent/*",
     "#evals/*": "./evals/*"
