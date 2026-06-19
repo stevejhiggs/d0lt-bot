@@ -1,16 +1,16 @@
-# d0lt-bot
+# d0lt-bot poc
 
 A GitHub assistant built on the [eve](https://www.npmjs.com/package/eve) agent
 framework. Point it at a pull request or a repository in chat and it does the work in
 an isolated sandbox:
 
-- **Review a pull request** — clones the repo, reads the diff in context, and returns a
+- **Review a pull request** — creates a sandbox, clones the repo, reads the diff in context, and returns a
   structured code review: a summary, severity-tagged findings (file/line/suggestion),
   and an `approve` / `comment` / `request changes` recommendation.
-- **Run a repository's tests** — clones the code, detects the stack, installs
+- **Run a repository's tests** — creates a sandbox, clones the code, detects the stack, installs
   dependencies, runs the tests, and reports a pass/fail result with the relevant output.
 
-Currently actually running in github is not enabled, eve supports this and others easily but it was not implemented for this poc.
+Note: this is not supposed to be an actual full review agent. It's mostly just a test of various systems running in eve. Currently actually running in github is not enabled, eve supports this and others easily but it was not implemented for this poc.
 
 ## How it works
 
